@@ -1,5 +1,7 @@
 #!/usr/bin/env groovy
 
+import java.util.UUID
+
 /* 
  ==================================================== 
  BASE
@@ -11,7 +13,7 @@ def getCurrentDir(){
 }
 
 def withEachCommand(Closure worker){
-	new File("${currentDir}src/commands/").eachFile worker
+	new File("${currentDir}src/").eachFile worker
 }
 
 class ExecContext {
@@ -22,9 +24,11 @@ class ExecContext {
 
 	def args
 
-	def sh(Object... command) {
+	def currentDir
+
+	def sh(String path, List command) {
 		try {
-			def process= new ProcessBuilder(*command).redirectErrorStream(true).start()
+			def process = new ProcessBuilder(*command).directory(new File(path)).redirectErrorStream(true).start()
 			process.inputStream.eachLine { println it }
 			return process.exitValue()
 		} catch (IllegalThreadStateException exp) {
@@ -32,15 +36,24 @@ class ExecContext {
 		}
 	}
 
+
+	def sh(String path, String command) {
+		sh(path, command.tokenize(' '))		
+	}
+
+	def sh(String command) {
+		sh(currentDir, command)  
+	}
+
 	def out(message){
 		println message
 	}	
 
 	def read(message){
-		System.console().readLine "${message} :"
+		System.console().readLine "${message}:"
 	}	
 
-	def readWithValidation(message, errorMessage, validator){
+	def readWithValidation(message, errorMessageGenerator, validator){
 		String response = read(message)
 		
 		try {
@@ -49,17 +62,25 @@ class ExecContext {
 			}
 		} catch (exp){}
 
-		out(errorMessage)
-		readWithValidation(message, errorMessage, validator)
+		out(errorMessageGenerator(response))
+		readWithValidation(message, errorMessageGenerator, validator)
 	}	
 
 	def readYesNo(message){
-		readWithValidation("${message} (y/n)", 'Invalid answer. Please type y/n.', { YES_NO_RESPONSE.contains(it) }) == 'y'
+		readWithValidation("${message} (y/n)", { 'Invalid answer. Please type y/n.' }, { YES_NO_RESPONSE.contains(it) }) == 'y'
 	}
 
 	def readDirectory(message){
-		readWithValidation(message, 'Directory not exits or its a file.', { new File(it).exists() && new File(it).isDirectory() })
+		readWithValidation(message, { "Directory '${it}' doen't exit or its a file." }, { new File(it).exists() && new File(it).isDirectory() })
 	}
+
+	def renameAllDirs(workDir, from, to){
+		sh(workDir, ['find', '.', '-name', 'blueprint', '-type', 'd', '-exec', 'bash', '-c', "mv \$1 \${1//${from}/${to}}", '--', '{}', ';'])
+	}	
+
+	def renameAllPlacehoders(workDir, from, to){
+		sh(workDir, ['find', '.', '-type', 'f', '-exec', 'bash', '-c', "sed -i 's/${from}/${to}/g' \$1 ", '--', '{}', ';'])
+	}	
 }
 
 /* 
@@ -78,5 +99,4 @@ COMMANDS.each { it.register(cli) }
 def options = cli.parse(args)
 def command = COMMANDS.find { it.supports(options) } ?: COMMANDS.find { it.isDefault() }
 // execute it
-
-new ExecContext(cli: cli, args: options.arguments()).with command.exec
+new ExecContext(cli: cli, args: options.arguments(), currentDir: currentDir).with command.exec
