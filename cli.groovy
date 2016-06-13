@@ -13,7 +13,7 @@ def getCurrentDir(){
 }
 
 def withEachCommand(Closure worker){
-	new File("${currentDir}src/").eachFile worker
+	new File("${currentDir}.otcli/src/").eachFile worker
 }
 
 class ExecContext {
