@@ -5,5 +5,6 @@ return [
 	exec : {
 		out('Executing upgrade ...')
 		sh('git pull')
+		out('Upgrade done')
 	}
 ]
