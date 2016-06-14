@@ -9,11 +9,12 @@ import java.util.UUID
 */
 
 def getCurrentDir(){
-	new File(".").absolutePath.replace('.', '')	
+	def path = new File(".").absolutePath
+	path.take(path.size() - 2)
 }
 
 def withEachCommand(Closure worker){
-	new File("${currentDir}.otcli/src/").eachFile worker
+	new File("${currentDir}/src/").eachFile worker
 }
 
 class ExecContext {
