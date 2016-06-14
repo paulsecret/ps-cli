@@ -4,6 +4,6 @@ return [
 	supports : { o -> o.upgrade },
 	exec : {
 		out('Executing upgrade ...')
-		sh('git', 'pull')
+		sh('git pull')
 	}
 ]
