@@ -50,5 +50,5 @@ return [
             sh(p.path, "git commit -m 'init'")
             // ---------------------------------------
             out "Project ${p.name} created :)"
-		}
+	}
 ]
