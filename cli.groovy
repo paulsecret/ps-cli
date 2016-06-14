@@ -9,8 +9,7 @@ import java.util.UUID
 */
 
 def getCurrentDir(){
-	def path = new File(".").absolutePath
-	path.take(path.size() - 2)
+	return "${System.getProperty('user.home')}/.otcli"
 }
 
 def withEachCommand(Closure worker){
